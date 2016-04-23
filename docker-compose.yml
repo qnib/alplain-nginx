@@ -1,0 +1,18 @@
+consul:
+  hostname: consul
+  container_name: consul
+  image: qnib/alplain-consul
+  ports:
+   - 8500:8500
+   - 8080:80
+  environment:
+   - DC_NAME=dc1
+   - CONSUL_BOOTSTRAP_EXPECT=1
+  dns: 127.0.0.1
+
+nginx:
+  container_name: nginx
+  image: qnib/alplain-nginx
+  volumes_from: 
+   - consul
+  net: container:consul
