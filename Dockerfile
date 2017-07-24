@@ -3,8 +3,7 @@ FROM qnib/alplain-init
 ONBUILD RUN echo "#Please provide your own config!" \
  && rm -f /etc/nginx/conf.d/default.conf \
           /etc/nginx/default.d/root.conf
-RUN apk add --update nginx \
- && rm -rf /var/cache/apk/*
+RUN apk add --no-cache nginx nginx-mod-http-lua lua-cjson
 ADD etc/nginx/nginx.conf /etc/nginx/
 ADD etc/nginx/conf.d/default.conf /etc/nginx/conf.d/
 ADD etc/nginx/default.d/root.conf /etc/nginx/default.d/
