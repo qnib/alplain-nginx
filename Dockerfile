@@ -1,60 +1,58 @@
 FROM qnib/alplain-init
 
-ENV NGINX_VERSION 1.11.3
-ENV DEVEL_KIT_MODULE_VERSION 0.3.0
-ENV LUA_MODULE_VERSION 0.10.6
-
-ENV LUAJIT_LIB=/usr/lib
-ENV LUAJIT_INC=/usr/include/luajit-2.1
-
-RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
-	&& CONFIG="\
-		--prefix=/etc/nginx \
-		--sbin-path=/usr/sbin/nginx \
-		--modules-path=/usr/lib/nginx/modules \
-		--conf-path=/etc/nginx/nginx.conf \
-		--error-log-path=/var/log/nginx/error.log \
-		--http-log-path=/var/log/nginx/access.log \
-		--pid-path=/var/run/nginx.pid \
-		--lock-path=/var/run/nginx.lock \
-		--http-client-body-temp-path=/var/cache/nginx/client_temp \
-		--http-proxy-temp-path=/var/cache/nginx/proxy_temp \
-		--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
-		--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
-		--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
-		--user=nginx \
-		--group=nginx \
-		--with-http_ssl_module \
-		--with-http_realip_module \
-		--with-http_addition_module \
-		--with-http_sub_module \
-		--with-http_dav_module \
-		--with-http_flv_module \
-		--with-http_mp4_module \
-		--with-http_gunzip_module \
-		--with-http_gzip_static_module \
-		--with-http_random_index_module \
-		--with-http_secure_link_module \
-		--with-http_stub_status_module \
-		--with-http_auth_request_module \
-		--with-http_xslt_module=dynamic \
-		--with-http_image_filter_module=dynamic \
-		--with-http_geoip_module \
-		--with-http_perl_module=dynamic \
-		--with-threads \
-		--with-stream \
-		--with-stream_ssl_module \
-		--with-stream_geoip_module=dynamic \
-		--with-http_slice_module \
-		--with-mail \
-		--with-mail_ssl_module \
-		--with-file-aio \
-		--with-http_v2_module \
-		--with-ipv6 \
-		--add-module=/usr/src/ngx_devel_kit-$DEVEL_KIT_MODULE_VERSION \
-		--add-module=/usr/src/lua-nginx-module-$LUA_MODULE_VERSION \
-	" \
-	&& addgroup -S nginx \
+ARG NGINX_VERSION=1.13.3
+ARG DEVEL_KIT_MODULE_VERSION=0.3.0
+ARG LUA_MODULE_VERSION=0.10.9rc8
+ARG LUAJIT_LIB=/usr/lib
+ARG LUAJIT_INC=/usr/include/luajit-2.1
+ARG GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8
+ARG CONFIG="\
+	--prefix=/etc/nginx \
+	--sbin-path=/usr/sbin/nginx \
+	--modules-path=/usr/lib/nginx/modules \
+	--conf-path=/etc/nginx/nginx.conf \
+	--error-log-path=/var/log/nginx/error.log \
+	--http-log-path=/var/log/nginx/access.log \
+	--pid-path=/var/run/nginx.pid \
+	--lock-path=/var/run/nginx.lock \
+	--http-client-body-temp-path=/var/cache/nginx/client_temp \
+	--http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+	--http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+	--http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+	--http-scgi-temp-path=/var/cache/nginx/scgi_temp \
+	--user=nginx \
+	--group=nginx \
+	--with-http_ssl_module \
+	--with-http_realip_module \
+	--with-http_addition_module \
+	--with-http_sub_module \
+	--with-http_dav_module \
+	--with-http_flv_module \
+	--with-http_mp4_module \
+	--with-http_gunzip_module \
+	--with-http_gzip_static_module \
+	--with-http_random_index_module \
+	--with-http_secure_link_module \
+	--with-http_stub_status_module \
+	--with-http_auth_request_module \
+	--with-http_xslt_module=dynamic \
+	--with-http_image_filter_module=dynamic \
+	--with-http_geoip_module \
+	--with-http_perl_module=dynamic \
+	--with-threads \
+	--with-stream \
+	--with-stream_ssl_module \
+	--with-stream_geoip_module=dynamic \
+	--with-http_slice_module \
+	--with-mail \
+	--with-mail_ssl_module \
+	--with-file-aio \
+	--with-http_v2_module \
+	--with-ipv6 \
+	--add-module=/usr/src/ngx_devel_kit-$DEVEL_KIT_MODULE_VERSION \
+	--add-module=/usr/src/lua-nginx-module-$LUA_MODULE_VERSION \
+"
+RUN addgroup -S nginx \
 	&& adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
 	&& apk add --no-cache --virtual .build-deps \
 		gcc \
@@ -71,19 +69,13 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 		geoip-dev \
 		perl-dev \
 		luajit-dev \
-	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
-	&& curl -fSL http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz.asc  -o nginx.tar.gz.asc \
-	&& curl -fSL https://github.com/simpl/ngx_devel_kit/archive/v$DEVEL_KIT_MODULE_VERSION.tar.gz -o ndk.tar.gz \
-	&& curl -fSL https://github.com/openresty/lua-nginx-module/archive/v$LUA_MODULE_VERSION.tar.gz -o lua.tar.gz \
-	&& export GNUPGHOME="$(mktemp -d)" \
-	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys "$GPG_KEYS" \
-	&& gpg --batch --verify nginx.tar.gz.asc nginx.tar.gz \
-	&& rm -r "$GNUPGHOME" nginx.tar.gz.asc \
-	&& mkdir -p /usr/src \
-	&& tar -zxC /usr/src -f nginx.tar.gz \
-	&& tar -zxC /usr/src -f ndk.tar.gz \
-	&& tar -zxC /usr/src -f lua.tar.gz \
-	&& rm nginx.tar.gz ndk.tar.gz lua.tar.gz \
+		lua5.2-dev \
+		lua5.2-cjson \
+		lua5.2
+RUN mkdir -p /usr/src \
+	&& wget -qO- http://nginx.org/download/nginx-$NGINX_VERSION.tar.gz |tar xfz - -C /usr/src/ \
+	&& wget -qO- https://github.com/simpl/ngx_devel_kit/archive/v$DEVEL_KIT_MODULE_VERSION.tar.gz |tar xfz - -C /usr/src/ \
+	&& wget -qO- https://github.com/openresty/lua-nginx-module/archive/v$LUA_MODULE_VERSION.tar.gz |tar xfz - -C /usr/src/ \
 	&& cd /usr/src/nginx-$NGINX_VERSION \
 	&& ./configure $CONFIG --with-debug \
 	&& make -j$(getconf _NPROCESSORS_ONLN) \
@@ -132,7 +124,6 @@ RUN GPG_KEYS=B0F4253373F8F6F510D42178520A9993A1C052F8 \
 	# forward request and error logs to docker log collector
 	&& ln -sf /dev/stdout /var/log/nginx/access.log \
 	&& ln -sf /dev/stderr /var/log/nginx/error.log
-RUN apk --no-cache add lua5.1-cjson
 ADD etc/nginx/nginx.conf /etc/nginx/
 #COPY nginx.vh.default.conf /etc/nginx/conf.d/default.conf
 
